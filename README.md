@@ -13,8 +13,8 @@ Groq Chat is a Streamlit-based chatbot application that allows users to interact
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/groq-chat-app.git
-   cd groq-chat-app
+   git clone https://github.com/Saumik17rkl/GroqAI-Chat-Streamlit-App.git
+   cd GroqAI-Chat-Streamlit-App
    ```
 2. Create a virtual environment (optional but recommended):
    ```bash
@@ -51,4 +51,5 @@ streamlit run streamlit_app.py
 
 ## Contributing
 Feel free to fork this repository and submit pull requests for enhancements.
+
 

@@ -3,6 +3,7 @@ import requests
 from datetime import datetime
 import json
 import os
+import pandas as pd
 
 # API Keys
 GROQ_API_KEY = "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"
@@ -74,14 +75,22 @@ st.markdown("<h1 style='text-align: center; color: white;'>🤖 AI ChatApp</h1>"
 
 # Chat Messages
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]): st.markdown(msg["content"])
+    with st.chat_message(msg["role"]):
+        if msg["role"] == "assistant" and "### 📊 Table" in msg["content"]:
+            # Display table if present
+            table_data = msg["content"].split("### 📊 Table")[1].strip()
+            df = pd.read_csv(pd.compat.StringIO(table_data))
+            st.dataframe(df)
+        else:
+            st.markdown(msg["content"])
 
 # User Prompt
 prompt = st.chat_input("Ask anything about the world, tech, news, or more...")
 if prompt:
     st.session_state.last_prompt = prompt
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
     # Try SERPAPI first
     try:
@@ -119,10 +128,16 @@ if prompt:
             res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
             result = res.json()
             core_reply = result["choices"][0]["message"]["content"]
-            bot_reply = f"### 🤖 Here's What I Found:\n{core_reply.strip()}\n\n✅ _Generated using {models[model_option]}_"
+
+            # Check if the response contains a table
+            if "### 📊 Table" in core_reply:
+                bot_reply = core_reply
+            else:
+                bot_reply = f"### 🤖 Here's What I Found:\n{core_reply.strip()}\n\n✅ _Generated using {models[model_option]}_"
         except Exception as e:
             bot_reply = f"❌ Error using LLM: {e}"
 
     st.session_state.last_response = bot_reply
-    with st.chat_message("assistant"): st.markdown(bot_reply)
+    with st.chat_message("assistant"):
+        st.markdown(bot_reply)
     st.session_state.messages.append({"role": "assistant", "content": bot_reply})

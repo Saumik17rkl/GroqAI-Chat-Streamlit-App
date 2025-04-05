@@ -8,7 +8,7 @@ GROQ_API_KEY = "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"
 # Page Config
 st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")
 
-# Background CSS
+# Background & Style
 st.markdown("""
     <style>
         body, .stApp {
@@ -18,9 +18,10 @@ st.markdown("""
             background-attachment: fixed;
         }
         .stChatMessage {
-            background-color: rgba(255, 255, 255, 0.85);
-            border-radius: 10px;
+            background-color: rgba(135, 206, 250, 0.4) !important; /* Sky Blue transparent */
+            border-radius: 12px;
             padding: 10px;
+            color: black;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -45,28 +46,21 @@ st.sidebar.subheader("🧠 Chatbot Feedback & Learning")
 
 # Feedback state
 if "confidence_score" not in st.session_state:
-    st.session_state.confidence_score = 70  # Starting point
+    st.session_state.confidence_score = 70
 if "feedback_data" not in st.session_state:
     st.session_state.feedback_data = {"positive": 0, "negative": 0, "neutral": 0, "comments": []}
 
-rating = st.sidebar.radio(
-    "How was the last response?",
-    ["Bad", "Okay", "Good", "Very Good", "Best"],
-    index=None
-)
+rating = st.sidebar.radio("How was the last response?", ["Bad", "Okay", "Good", "Very Good", "Best"], index=None)
 
 if rating:
     if rating in ["Bad", "Okay"]:
         st.session_state.feedback_data["negative"] += 1
         delta = -random.randint(1, 5)
         st.sidebar.warning("We'll improve based on your feedback!")
-    elif rating in ["Good", "Very Good", "Best"]:
+    else:
         st.session_state.feedback_data["positive"] += 1
         delta = random.randint(1, 4)
         st.sidebar.success("Glad you liked it!")
-    else:
-        st.session_state.feedback_data["neutral"] += 1
-        delta = 0
 
     st.session_state.confidence_score = min(100, max(0, st.session_state.confidence_score + delta))
 
@@ -76,7 +70,6 @@ if rating:
             st.session_state.feedback_data["comments"].append(comment)
         st.sidebar.success("✅ Feedback submitted!")
 
-# Learning Overview
 st.sidebar.subheader("📊 Learning Overview")
 st.sidebar.write(f"✅ Positive: {st.session_state.feedback_data['positive']}")
 st.sidebar.write(f"❌ Negative: {st.session_state.feedback_data['negative']}")
@@ -87,23 +80,23 @@ if st.session_state.feedback_data["comments"]:
     for c in st.session_state.feedback_data["comments"][-3:]:
         st.sidebar.caption(f"• {c}")
 
-# Initialize chat
+# Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Title
 st.markdown("<h1 style='text-align: center; color: white;'>💬 MindEase AI Chatbot</h1>", unsafe_allow_html=True)
 
-# Show chat history
+# Show previous chat messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        st.markdown(f"<div class='stChatMessage'>{msg['content']}</div>", unsafe_allow_html=True)
 
-# Chat input
+# New user input
 if prompt := st.chat_input("Type your message..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.markdown(f"<div class='stChatMessage'>{prompt}</div>", unsafe_allow_html=True)
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -123,7 +116,7 @@ if prompt := st.chat_input("Type your message..."):
         bot_reply = result["choices"][0]["message"]["content"]
 
         with st.chat_message("assistant"):
-            st.markdown(bot_reply)
+            st.markdown(f"<div class='stChatMessage'>{bot_reply}</div>", unsafe_allow_html=True)
 
         st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 

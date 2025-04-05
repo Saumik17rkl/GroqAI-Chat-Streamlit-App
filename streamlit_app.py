@@ -12,8 +12,8 @@ def icon(emoji: str):
 icon("🏎️")
 st.subheader("Groq Chat Streamlit App", divider="rainbow", anchor=False)
 
-# ✅ Direct API key (Replace with your actual key)
-client = Groq(api_key="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")
+# Groq API client (hardcoded API key - replace with your key)
+client = Groq(api_key="your_groq_api_key_here")
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -21,7 +21,7 @@ if "messages" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = None
 
-# Model options
+# Model options (mixtral removed)
 models = {
     "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
     "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
@@ -31,23 +31,20 @@ models = {
 }
 
 # Layout for model selection
-col1, col2 = st.columns(2)
-
-with col1:
-    model_option = st.selectbox(
-        "Choose a model:",
-        options=list(models.keys()),
-        format_func=lambda x: models[x]["name"],
-        index=4
-    )
+model_option = st.selectbox(
+    "Choose a model:",
+    options=list(models.keys()),
+    format_func=lambda x: models[x]["name"],
+    index=4
+)
 
 # Reset messages on model change
 if st.session_state.selected_model != model_option:
     st.session_state.messages = []
     st.session_state.selected_model = model_option
 
-# Token slider
-
+# Default max tokens (fixed)
+max_tokens = 4096
 
 # Show chat history
 for message in st.session_state.messages:
@@ -88,19 +85,20 @@ if prompt := st.chat_input("Enter your prompt here..."):
 
     except Exception as e:
         st.error(e, icon="🚨")
-    # Sidebar Feedback System
+
+# ---------------- Sidebar Feedback Section ----------------
 with st.sidebar:
-    st.markdown("### 💡 We value your feedback!")
-    st.write("How was your experience using the AIChat App?")
+    st.markdown("## 🌟 We'd Love Your Feedback!")
+    st.markdown("Help us improve this chat app. How was your experience?")
+    
+    feedback = st.radio(
+        "Rate your experience:",
+        ["👍 Excellent", "🙂 Good", "😐 Okay", "👎 Needs Improvement"],
+        horizontal=True
+    )
 
-    # Emoji Rating
-    rating = st.radio("Rate us:", ["😍 Loved it!", "😐 It’s okay", "😞 Needs improvement"], index=0)
+    comment = st.text_area("💬 Additional Comments", placeholder="Tell us what we can do better...")
 
-    # Text Input
-    feedback_text = st.text_area("Any suggestions or thoughts?", placeholder="Share your experience...")
-
-    # Submit Button
-    if st.button("📩 Submit Feedback"):
-        # You can add logic to save feedback to a file or database here
-        st.success("🎉 Thank you for your feedback!")
-
+    if st.button("Submit Feedback"):
+        st.success("✅ Thank you for your feedback!")
+        # Save to file or database if needed

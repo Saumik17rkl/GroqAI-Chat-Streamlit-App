@@ -1,10 +1,15 @@
 import streamlit as st
 import requests
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import datetime
+import matplotlib.pyplot as plt
 
-# 🛡️ API Key (hardcoded for testing; do not use in production)
+# 🛡️ API Key (for testing only)
 GROQ_API_KEY = "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"
 
-# Page Config
+# Page Configuration
 st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")
 
 # Background and Chat Styling
@@ -14,10 +19,10 @@ st.markdown("""
             background-image: url('https://wallpapercave.com/wp/FjnZ25X.jpg');
             background-size: cover;
             background-repeat: no-repeat;
-            background-attachment: centre;
+            background-attachment: center;
         }
         .stChatMessage {
-            background-color: rgba(135, 206, 250, 0.1) !important;
+            background-color: rgba(135, 206, 250, 0.06) !important;
             border-radius: 12px;
             padding: 10px;
             color: #dff6ff;
@@ -28,7 +33,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Models dictionary
+# Models
 models = {
     "gemma2-9b-it": "Gemma2-9b-it",
     "llama-3.3-70b-versatile": "LLaMA3.3-70b",
@@ -37,6 +42,16 @@ models = {
     "llama3-8b-8192": "LLaMA3-8b",
 }
 
+# Session Initialization
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "feedback_score" not in st.session_state:
+    st.session_state.feedback_score = 0
+if "max_tokens" not in st.session_state:
+    st.session_state.max_tokens = 512
+if "feedback_log" not in st.session_state:
+    st.session_state.feedback_log = []
+
 # Sidebar
 st.sidebar.title("⚙️ Settings")
 model_option = st.sidebar.selectbox("Choose a model:", list(models.keys()), format_func=lambda x: models[x])
@@ -44,30 +59,34 @@ if st.sidebar.button("🗑 Clear Chat"):
     st.session_state.messages = []
     st.session_state.feedback_score = 0
     st.session_state.max_tokens = 512
+    st.session_state.feedback_log = []
 
-# Session initialization
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "feedback_score" not in st.session_state:
-    st.session_state.feedback_score = 0
-if "max_tokens" not in st.session_state:
-    st.session_state.max_tokens = 512
+# Sidebar Feedback Analytics
+st.sidebar.markdown("### 📊 Feedback Analytics")
+if st.session_state.feedback_log:
+    df = pd.DataFrame(st.session_state.feedback_log)
+    counts = df["feedback"].value_counts()
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.bar(counts.index, counts.values, color="skyblue")
+    ax.set_title("Feedback Stats")
+    st.sidebar.pyplot(fig)
+else:
+    st.sidebar.info("No feedback given yet.")
 
 # Title
 st.markdown("<h1 style='text-align: center; color: white;'>💬 MindEase AI Chatbot</h1>", unsafe_allow_html=True)
 
-# Display previous messages
+# Show previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Input area
+# Chat input
 if prompt := st.chat_input("Type your message..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Prepare API request
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -90,10 +109,22 @@ if prompt := st.chat_input("Type your message..."):
 
         st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
-        # Feedback system
+        # Feedback
         feedback = st.radio("How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], horizontal=True)
 
-        # Reward/Penalty logic
+        # Feedback logging
+        log = {
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "feedback": feedback,
+            "model": model_option,
+            "tokens": st.session_state.max_tokens,
+            "user_input": prompt,
+            "response": bot_reply
+        }
+        st.session_state.feedback_log.append(log)
+        pd.DataFrame(st.session_state.feedback_log).to_csv("feedback_log.csv", index=False)
+
+        # Reinforcement-like feedback score/tokens
         if feedback == "Bad":
             st.session_state.feedback_score -= 1
             st.session_state.max_tokens = max(256, st.session_state.max_tokens - 64)

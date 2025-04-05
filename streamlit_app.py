@@ -6,11 +6,11 @@ import base64
 # Page configuration
 st.set_page_config(page_icon="💬", layout="wide", page_title="AIChat App")
 
-# Custom background with uploaded image
+# Custom background with external image
 page_bg_img = f"""
 <style>
 [data-testid="stAppViewContainer"] {{
-    background-image: url("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiApmHMIA0hjFFtAI4rKOOrAZF7EBeFU942bHDViiy9CBZmAkR2GCvO7tEy9InU27kVwuJWRWZj8Dcr7ciWy5XW2w_6nFnagZxQsfbpg5pTVrEti4GB7_27TRddJUC97p1fGw6l0-RGWpE/s1600/night-sky-wallpaper-1920x1080-mountain-hd-1875-wallpaper-high.jpg', 'rb').read()).decode()}");
+    background-image: url("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiApmHMIA0hjFFtAI4rKOOrAZF7EBeFU942bHDViiy9CBZmAkR2GCvO7tEy9InU27kVwuJWRWZj8Dcr7ciWy5XW2w_6nFnagZxQsfbpg5pTVrEti4GB7_27TRddJUC97p1fGw6l0-RGWpE/s1600/night-sky-wallpaper-1920x1080-mountain-hd-1875-wallpaper-high.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

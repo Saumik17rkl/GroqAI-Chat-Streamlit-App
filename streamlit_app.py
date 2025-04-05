@@ -47,16 +47,7 @@ if st.session_state.selected_model != model_option:
     st.session_state.selected_model = model_option
 
 # Token slider
-max_tokens_range = models[model_option]["tokens"]
-with col2:
-    max_tokens = st.slider(
-        "Max Tokens:",
-        min_value=512,
-        max_value=max_tokens_range,
-        value=min(32768, max_tokens_range),
-        step=512,
-        help=f"Adjust max tokens for response. Max: {max_tokens_range}"
-    )
+
 
 # Show chat history
 for message in st.session_state.messages:

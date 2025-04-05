@@ -17,7 +17,7 @@ SERP_API_KEY = "f70b86191f72adcb577d5868de844c8ad9c9a684db77c939448bcbc1ffaa7bb7
 background_image_url = "https://images.unsplash.com/photo-1604079629440-18cdd197c3bd?auto=format&fit=crop&w=1950&q=80"
 
 # Page Config
-st.set_page_config(page_title="💬  AI ChatAPP, page_icon="🤖", layout="centered")
+st.set_page_config(page_title="💬 MindEase AI Chatbot", page_icon=":robot_face:", layout="centered")
 
 # Background and Styling
 st.markdown(f"""
@@ -170,20 +170,33 @@ if prompt:
     # Show assistant reply
     with st.chat_message("assistant"):
         st.markdown(bot_reply)
-        feedback = st.radio("How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], key=f"feedback_{len(st.session_state.messages)}")
+
+        feedback_labels = {
+            "Bad": "😠 Bad",
+            "OK": "😐 OK",
+            "Good": "🙂 Good",
+            "Very Good": "😄 Very Good",
+            "Best": "🤩 Best"
+        }
+        feedback_options = list(feedback_labels.values())
+        feedback_mapping = {v: k for k, v in feedback_labels.items()}
+
+        feedback = st.radio("How was the response?", feedback_options, key=f"feedback_{len(st.session_state.messages)}")
         if feedback:
-            if feedback == "Bad":
+            actual_feedback = feedback_mapping[feedback]
+
+            if actual_feedback == "Bad":
                 st.session_state.feedback_score -= 1
                 st.session_state.max_tokens = max(256, st.session_state.max_tokens - 64)
-            elif feedback == "OK":
+            elif actual_feedback == "OK":
                 st.session_state.feedback_score -= 0.5
-            elif feedback == "Good":
+            elif actual_feedback == "Good":
                 st.session_state.feedback_score += 1
                 st.session_state.max_tokens += 32
-            elif feedback == "Very Good":
+            elif actual_feedback == "Very Good":
                 st.session_state.feedback_score += 2
                 st.session_state.max_tokens += 48
-            elif feedback == "Best":
+            elif actual_feedback == "Best":
                 st.session_state.feedback_score += 3
                 st.session_state.max_tokens += 64
 
@@ -191,13 +204,13 @@ if prompt:
                 "timestamp": str(datetime.now()),
                 "user_input": prompt,
                 "response": bot_reply,
-                "feedback": feedback,
+                "feedback": actual_feedback,
                 "score": st.session_state.feedback_score
             }
             os.makedirs("feedback_logs", exist_ok=True)
             with open("feedback_logs/feedback.json", "a") as f:
                 f.write(json.dumps(feedback_entry) + "\n")
 
-            st.toast(f"🧠 Feedback: {feedback} | 🎯 Score: {st.session_state.feedback_score} | 🔧 Tokens: {st.session_state.max_tokens}")
+            st.toast(f"🧠 Feedback: {actual_feedback} | 🎯 Score: {st.session_state.feedback_score} | 🔧 Tokens: {st.session_state.max_tokens}")
 
     st.session_state.messages.append({"role": "assistant", "content": bot_reply})

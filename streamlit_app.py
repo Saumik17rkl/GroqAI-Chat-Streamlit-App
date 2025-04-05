@@ -1,4 +1,7 @@
 import streamlit as st
+from typing import Generator
+from groq import Groq
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(page_icon="💬", layout="wide", page_title="AIChat App")
@@ -31,6 +34,9 @@ st.markdown("""
 <h2 style='text-align: center; color: white;'>Groq Chat Streamlit App</h2>
 <hr style='border: 1px solid #fff;'>
 """, unsafe_allow_html=True)
+
+# Initialize Groq API client with your API key
+client = Groq(api_key="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")
 
 # Session state
 if "messages" not in st.session_state:
@@ -103,6 +109,12 @@ for message in st.session_state.messages:
     </div>
     """, unsafe_allow_html=True)
 
+# Generator for streaming
+def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
+    for chunk in chat_completion:
+        if chunk.choices[0].delta.content:
+            yield chunk.choices[0].delta.content
+
 # Chat input
 if prompt := st.chat_input("Enter your prompt here..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -110,11 +122,21 @@ if prompt := st.chat_input("Enter your prompt here..."):
         st.markdown(prompt)
 
     try:
-        # Simulate chat completion response (you will need to replace this with actual API call)
-        response = f"Response to: {prompt}"
+        chat_completion = client.chat.completions.stream.create(
+            model=model_option,
+            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+            max_tokens=2048
+        )
+
         with st.chat_message("assistant", avatar="🤖"):
-            st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            chat_responses_generator = generate_chat_responses(chat_completion)
+            full_response = st.write_stream(chat_responses_generator)
+
+        if isinstance(full_response, str):
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        else:
+            combined_response = "\n".join(str(item) for item in full_response)
+            st.session_state.messages.append({"role": "assistant", "content": combined_response})
 
     except Exception as e:
         st.error(e, icon="🚨")

@@ -7,7 +7,7 @@ st.set_page_config(page_title="🌍AI ChatApp", layout="centered")
 
 # 🎨 Background Styling
 background_image_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80"
-st.markdown(f
+st.markdown(f'''
     <style>
     .stApp {{
         background-image: url("{background_image_url}");
@@ -24,7 +24,7 @@ st.markdown(f
     }}
     .stMarkdown, .stTextInput input, .stButton button, .stSelectbox>div>div {{
         color: white !important;
-    }}
+   ''' }}
     </style>
 , unsafe_allow_html=True)
 

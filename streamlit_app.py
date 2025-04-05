@@ -1,16 +1,16 @@
 import streamlit as st
 from typing import Generator
 from groq import Groq
-import base64
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(page_icon="💬", layout="wide", page_title="AIChat App")
 
-# Custom background with external image
+# Full page background image using external image
 page_bg_img = f"""
 <style>
 [data-testid="stAppViewContainer"] {{
-    background-image: url("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiApmHMIA0hjFFtAI4rKOOrAZF7EBeFU942bHDViiy9CBZmAkR2GCvO7tEy9InU27kVwuJWRWZj8Dcr7ciWy5XW2w_6nFnagZxQsfbpg5pTVrEti4GB7_27TRddJUC97p1fGw6l0-RGWpE/s1600/night-sky-wallpaper-1920x1080-mountain-hd-1875-wallpaper-high.jpg");
+    background-image: url("https://wallpapercave.com/wp/FjnZ25X.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -27,12 +27,12 @@ st.markdown(page_bg_img, unsafe_allow_html=True)
 # Display page icon and title
 st.markdown("""
 <div style='text-align: center; font-size: 78px;'>🏎️</div>
-<h2 style='text-align: center;'>Groq Chat Streamlit App</h2>
+<h2 style='text-align: center; color: white;'>Groq Chat Streamlit App</h2>
 <hr style='border: 1px solid #fff;'>
 """, unsafe_allow_html=True)
 
 # Groq API client with direct key (replace with your real API key)
-client = Groq(api_key="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")  # Replace with your actual API key
+client = Groq(api_key="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")
 
 # Session state
 if "messages" not in st.session_state:
@@ -72,24 +72,32 @@ with st.sidebar:
     if st.button("📩 Submit Feedback"):
         st.success("Thanks for your feedback! 🌟")
 
-# Show messages
+# WhatsApp-style message display
 for message in st.session_state.messages:
-    avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
-    bubble_color = "rgba(0, 123, 255, 0.2)"  # Slightly transparent blue
-    alignment = "flex-end" if message["role"] == "user" else "flex-start"
-    border_radius = "20px 20px 0 20px" if message["role"] == "user" else "20px 20px 20px 0"
+    is_user = message["role"] == "user"
+    avatar_url = "https://img.icons8.com/ios-filled/50/user-male-circle.png" if is_user else "https://img.icons8.com/ios-filled/50/bot.png"
+    bubble_color = "#DCF8C6" if is_user else "#FFFFFF"
+    alignment = "flex-end" if is_user else "flex-start"
+    text_align = "right" if is_user else "left"
+    border_radius = "18px 18px 0 18px" if is_user else "18px 18px 18px 0"
+    timestamp = datetime.now().strftime("%H:%M")
 
     st.markdown(f"""
-    <div style="display: flex; justify-content: {alignment}; margin: 10px 0;">
+    <div style="display: flex; justify-content: {alignment}; margin: 8px;">
+        <img src="{avatar_url}" width="35" height="35" style="border-radius: 50%; margin: 5px;" />
         <div style="
             background-color: {bubble_color};
-            color: black;
-            padding: 10px 15px;
+            padding: 12px 16px;
             border-radius: {border_radius};
-            max-width: 70%;
-            box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+            max-width: 65%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            color: black;
+            font-size: 15px;
+            line-height: 1.5;
+            text-align: {text_align};
         ">
-            <strong>{avatar}</strong> {message["content"]}
+            {message["content"]}
+            <div style="text-align: {text_align}; font-size: 11px; color: gray; margin-top: 5px;">{timestamp}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)

@@ -1,50 +1,49 @@
 import streamlit as st
 import requests
-import speech_recognition as sr
-import pyttsx3
 from datetime import datetime
 
-# Set page config
+# ✅ Set page config
 st.set_page_config(page_title="🌍 AI ChatApp", layout="centered")
 
-# Dark/Light theme toggle
-theme = st.sidebar.radio("🎨 Theme", ["Dark", "Light"])
-dark_mode = theme == "Dark"
-
-background_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80" if dark_mode else ""
-text_color = "white" if dark_mode else "black"
-bg_color = "rgba(0,0,0,0.5)" if dark_mode else "rgba(255,255,255,0.6)"
-
-# Custom CSS
-st.markdown(f"""
+# 🎨 Custom Styling with transparent black textbox
+background_image_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80"
+st.markdown(f'''
     <style>
     .stApp {{
-        background-image: url('{background_url}');
+        background-image: url("{background_image_url}");
         background-size: cover;
         background-attachment: fixed;
         background-position: center;
         background-repeat: no-repeat;
-        color: {text_color};
+        color: white;
     }}
-    .stTextInput > div > div > input,
     .stChatMessage {{
-        background-color: {bg_color} !important;
-        color: {text_color} !important;
-        border-radius: 10px;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        border-radius: 12px;
+        padding: 10px;
+    }}
+    .stTextInput > div > div > input {{
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        color: white !important;
     }}
     .stButton > button {{
         background-color: rgba(255, 255, 255, 0.1);
-        color: {text_color};
+        color: white;
         border-radius: 10px;
     }}
+    .stSelectbox > div {{
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        color: white !important;
+    }}
     </style>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
-# API keys (For demo only)
+# ⚠️ Hardcoded API KEYS (For Demo Only)
 GROQ_API_KEY = "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"
 NEWS_API_KEY = "2a85b7ff3378486fb4c8f553b07351f0"
 SERPAPI_KEY = "f70b86191f72adcb577d5868de844c8ad9c9a684db77c939448bcbc1ffaa7bb7"
 
+# 📰 Get latest headlines
 @st.cache_data(ttl=86400)
 def fetch_news():
     try:
@@ -54,6 +53,7 @@ def fetch_news():
     except:
         return ["⚠️ Unable to fetch latest news."]
 
+# 🌐 Web Search for query
 def web_search(query):
     try:
         params = {
@@ -72,68 +72,41 @@ def web_search(query):
     except:
         return "❌ Error during web search."
 
-# 🎤 Voice Input
-def voice_to_text():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎙️ Speak now...")
-        audio = recognizer.listen(source)
-        try:
-            return recognizer.recognize_google(audio)
-        except sr.UnknownValueError:
-            return "⚠️ Could not understand audio."
-        except sr.RequestError:
-            return "❌ Speech recognition service failed."
+# 🧠 Title
+st.title("🧠 News-Aware Chatbot")
 
-# 🔊 Text-to-Speech Output
-def speak(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 170)
-    engine.say(text)
-    engine.runAndWait()
-
-# Title
-st.title("🧠 Voice & News-Aware Chatbot")
-
-# Sidebar
+# ⚙️ Sidebar Settings
 st.sidebar.title("⚙️ Settings")
 model_option = st.sidebar.selectbox("Choose Model", ["llama3-8b-8192", "gemma2-9b-it"])
 if st.sidebar.button("🧹 Clear Chat"):
     st.session_state.messages = []
 
-# Chat History Init
+feedback = st.sidebar.radio("🗣️ How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], index=2)
+
+# 🗨️ Session init
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Latest News
+# 📰 Show latest news
 st.markdown("### 📢 Latest Headlines")
 headlines = fetch_news()
 st.markdown("\n".join(headlines))
 
-# Show old chats
+# 🧾 Show past messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 👂 Input
-col1, col2 = st.columns([4, 1])
-with col1:
-    user_input = st.chat_input("Type or speak your question...")
-
-with col2:
-    if st.button("🎤 Speak"):
-        user_input = voice_to_text()
-        st.success(f"You said: {user_input}")
-
-# 🔄 Processing
-if user_input:
+# 🧾 Chat Input
+if prompt := st.chat_input("Ask anything..."):
     with st.chat_message("user"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+        st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Real-time context
+    # Context: latest news + web info
     news_summary = "\n".join(headlines)
-    web_snip = web_search(user_input)
+    web_snip = web_search(prompt)
+
     context = f"""You are a smart assistant aware of real-time news and internet updates.
 
 🗓️ Date: {datetime.today().strftime('%A, %B %d, %Y')}
@@ -143,13 +116,14 @@ if user_input:
 🌐 Web Info:
 {web_snip}
 
-User asked: {user_input}
+User asked: {prompt}
 """
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
+
     payload = {
         "model": model_option,
         "messages": [{"role": "user", "content": context}],
@@ -165,16 +139,7 @@ User asked: {user_input}
 
     with st.chat_message("assistant"):
         st.markdown(bot_reply)
-
     st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
-    # 🔊 Read aloud
-    if st.toggle("🔊 Enable Voice Output", value=True):
-        speak(bot_reply)
-
-    # 💾 Save to File
-    if st.toggle("💾 Save chat to file", value=False):
-        with open("chat_history.txt", "w", encoding="utf-8") as f:
-            for msg in st.session_state.messages:
-                f.write(f"{msg['role'].capitalize()}: {msg['content']}\n")
-        st.success("✅ Chat saved to chat_history.txt")
+    # 📢 Toast feedback
+    st.toast(f"✅ Feedback noted: {feedback}")

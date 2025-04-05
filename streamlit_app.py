@@ -16,9 +16,9 @@ page_bg_img = f"""
     background-repeat: no-repeat;
 }}
 [data-testid="stChatInput"] textarea {{
-    background-color: #ffcccc !important;
-    border: 2px solid red !important;
-    color: black !important;
+    background-color: black !important;
+    border: 2px solid #444 !important;
+    color: white !important;
 }}
 </style>
 """
@@ -75,7 +75,7 @@ with st.sidebar:
 # Show messages
 for message in st.session_state.messages:
     avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
-    bubble_color = "#DCF8C6" if message["role"] == "user" else "#ffffff"
+    bubble_color = "rgba(0, 123, 255, 0.2)"  # Slightly transparent blue
     alignment = "flex-end" if message["role"] == "user" else "flex-start"
     border_radius = "20px 20px 0 20px" if message["role"] == "user" else "20px 20px 20px 0"
 

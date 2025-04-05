@@ -12,8 +12,8 @@ def icon(emoji: str):
 icon("🏎️")
 st.subheader("Groq Chat Streamlit App", divider="rainbow", anchor=False)
 
-# Groq API client
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+# ✅ Direct API key (Replace with your actual key)
+client = Groq(api_key="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")
 
 # Initialize session state
 if "messages" not in st.session_state:

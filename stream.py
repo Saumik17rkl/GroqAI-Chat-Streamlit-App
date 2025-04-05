@@ -6,7 +6,6 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from fpdf import FPDF
-from serpapi import GoogleSearch
 
 # API Keys
 GROQ_API_KEY = "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"

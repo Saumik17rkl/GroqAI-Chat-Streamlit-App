@@ -32,5 +32,6 @@ speechrecognition
 fpdf
 
 # Live Info Detection APIs
-serpapi
+serpapi>=0.1.5
+
 newsapi-python

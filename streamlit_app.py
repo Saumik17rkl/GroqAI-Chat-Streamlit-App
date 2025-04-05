@@ -6,12 +6,12 @@ from datetime import datetime
 # Page configuration
 st.set_page_config(page_icon="💬", layout="wide", page_title="AIChat App")
 
-# Full page background image using external image
+# Minimized page background image
 page_bg_img = f"""
 <style>
 [data-testid="stAppViewContainer"] {{
     background-image: url("https://wallpapercave.com/wp/FjnZ25X.jpg");
-    background-size: cover;
+    background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
 }}

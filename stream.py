@@ -2,96 +2,84 @@ import streamlit as st
 import requests
 from datetime import datetime
 
-# 🛡️ API Keys (Replace with your actual keys)
+# ⚠️ Hardcoded API KEYS (For Demo Only)
 GROQ_API_KEY = "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"
 NEWS_API_KEY = "2a85b7ff3378486fb4c8f553b07351f0"
+SERPAPI_KEY = "f70b86191f72adcb577d5868de844c8ad9c9a684db77c939448bcbc1ffaa7bb7"
 
-# Page Config
-st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")
+# Get latest headlines
+@st.cache_data(ttl=86400)
+def fetch_news():
+    try:
+        url = f"https://newsapi.org/v2/top-headlines?language=en&apiKey={NEWS_API_KEY}&pageSize=5"
+        res = requests.get(url).json()
+        return [f"- {a['title']} ({a['source']['name']})" for a in res.get("articles", [])]
+    except:
+        return ["⚠️ Unable to fetch latest news."]
 
-# Background Styling
-st.markdown("""
-    <style>
-        body, .stApp {
-            background-image: url('https://wallpapercave.com/wp/FjnZ25X.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: center;
-        }
-        .stChatMessage {
-            background-color: rgba(135, 206, 250, 0.05) !important;
-            border-radius: 12px;
-            padding: 10px;
-            color: #dff6ff;
-        }
-        .stMarkdown, .stTextInput>div>div>input, .stButton button, .stSelectbox>div>div>div {
-            color: #dff6ff !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# Search web for live query info
+def web_search(query):
+    params = {
+        "q": query,
+        "api_key": SERPAPI_KEY,
+        "engine": "google",
+    }
+    url = "https://serpapi.com/search"
+    res = requests.get(url, params=params).json()
+    if "answer_box" in res:
+        return res["answer_box"].get("snippet") or res["answer_box"].get("answer")
+    elif "organic_results" in res and res["organic_results"]:
+        return res["organic_results"][0].get("snippet", "")
+    else:
+        return "🌐 No web data found."
 
-# Models dictionary
-models = {
-    "gemma2-9b-it": "Gemma2-9b-it",
-    "llama-3.3-70b-versatile": "LLaMA3.3-70b",
-    "llama-3.1-8b-instant": "LLaMA3.1-8b",
-    "llama3-70b-8192": "LLaMA3-70b",
-    "llama3-8b-8192": "LLaMA3-8b",
-}
+# Streamlit config
+st.set_page_config(page_title="🌍 News-Aware AI", layout="centered")
+st.title("🧠 News-Aware Chatbot")
 
-# Sidebar
+# Sidebar settings
 st.sidebar.title("⚙️ Settings")
-model_option = st.sidebar.selectbox("Choose a model:", list(models.keys()), format_func=lambda x: models[x])
-if st.sidebar.button("🗑 Clear Chat"):
+model_option = st.sidebar.selectbox("Choose Model", ["llama3-8b-8192", "gemma2-9b-it"])
+if st.sidebar.button("🧹 Clear Chat"):
     st.session_state.messages = []
-    st.session_state.feedback_score = 0
-    st.session_state.max_tokens = 512
 
-# Sidebar Feedback
-st.sidebar.markdown("### 📊 Feedback")
-sidebar_feedback = st.sidebar.radio("How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], index=2)
+feedback = st.sidebar.radio("🗣️ How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], index=2)
 
-# Session initialization
+# Init session
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "feedback_score" not in st.session_state:
-    st.session_state.feedback_score = 0
-if "max_tokens" not in st.session_state:
-    st.session_state.max_tokens = 512
 
-# 📰 Get Latest News Function
-@st.cache_data(ttl=86400)
-def get_latest_news():
-    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={NEWS_API_KEY}&pageSize=5"
-    try:
-        res = requests.get(url).json()
-        articles = res.get("articles", [])
-        news_list = [f"- {a['title']} ({a['source']['name']})" for a in articles]
-        return "\n".join(news_list)
-    except Exception as e:
-        return f"⚠️ Error fetching news: {e}"
+# Show latest news
+st.markdown("### 📢 Latest Headlines")
+headlines = fetch_news()
+st.markdown("\n".join(headlines))
 
-# News Section
-st.markdown("### 📰 Latest News (India)")
-news_summary = get_latest_news()
-st.markdown(f"<div style='background-color: rgba(255,255,255,0.1); padding:10px; border-radius:10px; color:white;'>{news_summary}</div>", unsafe_allow_html=True)
-
-# Title
-st.markdown("<h1 style='text-align: center; color: white;'>💬 MindEase AI Chatbot</h1>", unsafe_allow_html=True)
-
-# Display previous messages
+# Previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Input and Bot response
-if prompt := st.chat_input("Type your message..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# Input
+if prompt := st.chat_input("Ask anything..."):
     with st.chat_message("user"):
         st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Inject news context into prompt
-    context = f"Today is {datetime.today().strftime('%A, %B %d, %Y')}.\nHere are some latest news headlines from India:\n{news_summary}\n\nUser asked: {prompt}"
+    # Real-time context
+    news_summary = "\n".join(headlines)
+    web_snip = web_search(prompt)
+
+    context = f"""You are a smart assistant aware of real-time news and internet updates.
+    
+    🗓️ Date: {datetime.today().strftime('%A, %B %d, %Y')}
+    📰 Top News:
+    {news_summary}
+    
+    🌐 Web Info:
+    {web_snip}
+    
+    User asked: {prompt}
+    """
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -101,38 +89,18 @@ if prompt := st.chat_input("Type your message..."):
     payload = {
         "model": model_option,
         "messages": [{"role": "user", "content": context}],
-        "max_tokens": st.session_state.max_tokens,
+        "max_tokens": 512,
         "stream": False
     }
 
     try:
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-        result = response.json()
-        bot_reply = result["choices"][0]["message"]["content"]
-
-        with st.chat_message("assistant"):
-            st.markdown(bot_reply)
-
-        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-
-        # Feedback Logic
-        fb = sidebar_feedback
-        if fb == "Bad":
-            st.session_state.feedback_score -= 1
-            st.session_state.max_tokens = max(256, st.session_state.max_tokens - 64)
-        elif fb == "OK":
-            st.session_state.feedback_score -= 0.5
-        elif fb == "Good":
-            st.session_state.feedback_score += 1
-            st.session_state.max_tokens += 32
-        elif fb == "Very Good":
-            st.session_state.feedback_score += 2
-            st.session_state.max_tokens += 48
-        elif fb == "Best":
-            st.session_state.feedback_score += 3
-            st.session_state.max_tokens += 64
-
-        st.toast(f"🧠 Feedback: {fb} | 🎯 Score: {st.session_state.feedback_score} | 🔧 Tokens: {st.session_state.max_tokens}")
-
+        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+        bot_reply = res.json()["choices"][0]["message"]["content"]
     except Exception as e:
-        st.error(f"⚠️ Error: {e}")
+        bot_reply = f"❌ Error: {e}"
+
+    with st.chat_message("assistant"):
+        st.markdown(bot_reply)
+    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+    st.toast(f"✅ Feedback: {feedback}")

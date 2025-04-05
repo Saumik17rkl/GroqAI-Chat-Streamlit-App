@@ -10,7 +10,7 @@ def icon(emoji: str):
     st.write(f'<span style="font-size: 78px; line-height: 1">{emoji}</span>', unsafe_allow_html=True)
 
 icon("🏎️")
-st.subheader("Groq Chat Streamlit App", divider="rainbow", anchor=False)
+st.subheader("AI Chat App", divider="rainbow", anchor=False)
 
 # Groq API client (hardcoded API key - replace with your key)
 client = Groq(api_key="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")

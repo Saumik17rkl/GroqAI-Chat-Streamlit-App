@@ -3,11 +3,11 @@ import requests
 from datetime import datetime
 
 # ✅ Must be first Streamlit command
-st.set_page_config(page_title="🌍 News-Aware AI", layout="centered")
+st.set_page_config(page_title="🌍AI ChatApp", layout="centered")
 
 # 🎨 Background Styling
 background_image_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80"
-st.markdown(f"""
+st.markdown(f
     <style>
     .stApp {{
         background-image: url("{background_image_url}");
@@ -26,7 +26,7 @@ st.markdown(f"""
         color: white !important;
     }}
     </style>
-""", unsafe_allow_html=True)
+, unsafe_allow_html=True)
 
 # ⚠️ Hardcoded API KEYS (For Demo Only)
 GROQ_API_KEY = "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"

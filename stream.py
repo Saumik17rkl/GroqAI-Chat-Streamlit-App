@@ -2,12 +2,36 @@ import streamlit as st
 import requests
 from datetime import datetime
 
+# === Background Image Styling ===
+background_image_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80"
+
+st.markdown(f"""
+    <style>
+    .stApp {{
+        background-image: url("{background_image_url}");
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        background-repeat: no-repeat;
+        color: white;
+    }}
+    .stChatMessage {{
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        border-radius: 12px;
+        padding: 10px;
+    }}
+    .stMarkdown, .stTextInput input, .stButton button, .stSelectbox>div>div {{
+        color: white !important;
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
 # ⚠️ Hardcoded API KEYS (For Demo Only)
 GROQ_API_KEY = "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"
 NEWS_API_KEY = "2a85b7ff3378486fb4c8f553b07351f0"
 SERPAPI_KEY = "f70b86191f72adcb577d5868de844c8ad9c9a684db77c939448bcbc1ffaa7bb7"
 
-# Get latest headlines
+# === Fetch News ===
 @st.cache_data(ttl=86400)
 def fetch_news():
     try:
@@ -17,7 +41,7 @@ def fetch_news():
     except:
         return ["⚠️ Unable to fetch latest news."]
 
-# Search web for live query info
+# === Web Search Snippet ===
 def web_search(query):
     params = {
         "q": query,
@@ -33,11 +57,11 @@ def web_search(query):
     else:
         return "🌐 No web data found."
 
-# Streamlit config
+# === Streamlit UI ===
 st.set_page_config(page_title="🌍 News-Aware AI", layout="centered")
 st.title("🧠 News-Aware Chatbot")
 
-# Sidebar settings
+# === Sidebar ===
 st.sidebar.title("⚙️ Settings")
 model_option = st.sidebar.selectbox("Choose Model", ["llama3-8b-8192", "gemma2-9b-it"])
 if st.sidebar.button("🧹 Clear Chat"):
@@ -45,21 +69,21 @@ if st.sidebar.button("🧹 Clear Chat"):
 
 feedback = st.sidebar.radio("🗣️ How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], index=2)
 
-# Init session
+# === Session State ===
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Show latest news
+# === Show News ===
 st.markdown("### 📢 Latest Headlines")
 headlines = fetch_news()
 st.markdown("\n".join(headlines))
 
-# Previous messages
+# === Chat History ===
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Input
+# === Chat Input ===
 if prompt := st.chat_input("Ask anything..."):
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -70,14 +94,14 @@ if prompt := st.chat_input("Ask anything..."):
     web_snip = web_search(prompt)
 
     context = f"""You are a smart assistant aware of real-time news and internet updates.
-    
+
     🗓️ Date: {datetime.today().strftime('%A, %B %d, %Y')}
     📰 Top News:
     {news_summary}
-    
+
     🌐 Web Info:
     {web_snip}
-    
+
     User asked: {prompt}
     """
 

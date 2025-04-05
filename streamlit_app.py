@@ -1,32 +1,34 @@
 import streamlit as st
 import requests
-import random
 
-# 🛡️ HARD-CODED API KEY (Not recommended for production)
+# 🛡️ API Key (hardcoded for testing; do not use in production)
 GROQ_API_KEY = "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"
 
 # Page Config
 st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")
 
-# Background & Style
+# Background and Chat Styling
 st.markdown("""
     <style>
         body, .stApp {
             background-image: url('https://wallpapercave.com/wp/FjnZ25X.jpg');
             background-size: cover;
             background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-attachment: centre;
         }
         .stChatMessage {
-            background-color: rgba(135, 206, 250, 0.4) !important; /* Sky Blue transparent */
+            background-color: rgba(135, 206, 250, 0.1) !important;
             border-radius: 12px;
             padding: 10px;
-            color: black;
+            color: #dff6ff;
+        }
+        .stMarkdown, .stTextInput>div>div>input, .stButton button, .stSelectbox>div>div>div {
+            color: #dff6ff !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# Model Mapping
+# Models dictionary
 models = {
     "gemma2-9b-it": "Gemma2-9b-it",
     "llama-3.3-70b-versatile": "LLaMA3.3-70b",
@@ -35,69 +37,37 @@ models = {
     "llama3-8b-8192": "LLaMA3-8b",
 }
 
-# Sidebar - Model Selection and Chat Clear
+# Sidebar
 st.sidebar.title("⚙️ Settings")
 model_option = st.sidebar.selectbox("Choose a model:", list(models.keys()), format_func=lambda x: models[x])
 if st.sidebar.button("🗑 Clear Chat"):
     st.session_state.messages = []
+    st.session_state.feedback_score = 0
+    st.session_state.max_tokens = 512
 
-# Sidebar - Feedback System
-st.sidebar.subheader("🧠 Chatbot Feedback & Learning")
-
-# Feedback state
-if "confidence_score" not in st.session_state:
-    st.session_state.confidence_score = 70
-if "feedback_data" not in st.session_state:
-    st.session_state.feedback_data = {"positive": 0, "negative": 0, "neutral": 0, "comments": []}
-
-rating = st.sidebar.radio("How was the last response?", ["Bad", "Okay", "Good", "Very Good", "Best"], index=None)
-
-if rating:
-    if rating in ["Bad", "Okay"]:
-        st.session_state.feedback_data["negative"] += 1
-        delta = -random.randint(1, 5)
-        st.sidebar.warning("We'll improve based on your feedback!")
-    else:
-        st.session_state.feedback_data["positive"] += 1
-        delta = random.randint(1, 4)
-        st.sidebar.success("Glad you liked it!")
-
-    st.session_state.confidence_score = min(100, max(0, st.session_state.confidence_score + delta))
-
-    comment = st.sidebar.text_input("Any suggestions or comments?")
-    if st.sidebar.button("Submit Feedback"):
-        if comment:
-            st.session_state.feedback_data["comments"].append(comment)
-        st.sidebar.success("✅ Feedback submitted!")
-
-st.sidebar.subheader("📊 Learning Overview")
-st.sidebar.write(f"✅ Positive: {st.session_state.feedback_data['positive']}")
-st.sidebar.write(f"❌ Negative: {st.session_state.feedback_data['negative']}")
-st.sidebar.write(f"📈 Confidence Score: {st.session_state.confidence_score}%")
-
-if st.session_state.feedback_data["comments"]:
-    st.sidebar.write("📝 Recent Comments:")
-    for c in st.session_state.feedback_data["comments"][-3:]:
-        st.sidebar.caption(f"• {c}")
-
-# Chat history
+# Session initialization
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "feedback_score" not in st.session_state:
+    st.session_state.feedback_score = 0
+if "max_tokens" not in st.session_state:
+    st.session_state.max_tokens = 512
 
 # Title
 st.markdown("<h1 style='text-align: center; color: white;'>💬 MindEase AI Chatbot</h1>", unsafe_allow_html=True)
 
-# Show previous chat messages
+# Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(f"<div class='stChatMessage'>{msg['content']}</div>", unsafe_allow_html=True)
+        st.markdown(msg["content"])
 
-# New user input
+# Input area
 if prompt := st.chat_input("Type your message..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(f"<div class='stChatMessage'>{prompt}</div>", unsafe_allow_html=True)
+        st.markdown(prompt)
 
+    # Prepare API request
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -106,7 +76,7 @@ if prompt := st.chat_input("Type your message..."):
     payload = {
         "model": model_option,
         "messages": st.session_state.messages,
-        "max_tokens": 512,
+        "max_tokens": st.session_state.max_tokens,
         "stream": False
     }
 
@@ -116,9 +86,30 @@ if prompt := st.chat_input("Type your message..."):
         bot_reply = result["choices"][0]["message"]["content"]
 
         with st.chat_message("assistant"):
-            st.markdown(f"<div class='stChatMessage'>{bot_reply}</div>", unsafe_allow_html=True)
+            st.markdown(bot_reply)
 
         st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+        # Feedback system
+        feedback = st.radio("How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], horizontal=True)
+
+        # Reward/Penalty logic
+        if feedback == "Bad":
+            st.session_state.feedback_score -= 1
+            st.session_state.max_tokens = max(256, st.session_state.max_tokens - 64)
+        elif feedback == "OK":
+            st.session_state.feedback_score -= 0.5
+        elif feedback == "Good":
+            st.session_state.feedback_score += 1
+            st.session_state.max_tokens += 32
+        elif feedback == "Very Good":
+            st.session_state.feedback_score += 2
+            st.session_state.max_tokens += 48
+        elif feedback == "Best":
+            st.session_state.feedback_score += 3
+            st.session_state.max_tokens += 64
+
+        st.toast(f"🧠 Feedback: {feedback} | 🎯 Score: {st.session_state.feedback_score} | 🔧 Tokens: {st.session_state.max_tokens}")
 
     except Exception as e:
         st.error(f"⚠️ Error: {e}")

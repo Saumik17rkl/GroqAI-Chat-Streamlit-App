@@ -40,31 +40,59 @@ if "messages" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = None
 
-# Model options
-models = {
-    "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
-    "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
-    "llama-3.1-8b-instant": {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
-    "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
-    "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
-}
+# Sidebar: Choose a model
+with st.sidebar:
+    st.markdown("""
+    <h3 style='text-align:center;'>🤖 Choose a Model</h3>
+    """, unsafe_allow_html=True)
+    models = {
+        "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
+        "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
+        "llama-3.1-8b-instant": {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
+        "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
+        "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
+    }
+    model_option = st.selectbox(
+        "Choose a model:",
+        options=list(models.keys()),
+        format_func=lambda x: models[x]["name"],
+        index=4
+    )
 
-model_option = st.selectbox(
-    "Choose a model:",
-    options=list(models.keys()),
-    format_func=lambda x: models[x]["name"],
-    index=4
-)
+    if st.session_state.selected_model != model_option:
+        st.session_state.messages = []
+        st.session_state.selected_model = model_option
 
-if st.session_state.selected_model != model_option:
-    st.session_state.messages = []
-    st.session_state.selected_model = model_option
+    st.markdown("""
+    <hr>
+    <h3 style='text-align:center;'>💡 Feedback Corner</h3>
+    <p style='text-align:center;'>We value your thoughts. Help us improve!</p>
+    """, unsafe_allow_html=True)
+    feedback = st.text_area("📝 Leave your feedback here:")
+    if st.button("📩 Submit Feedback"):
+        st.success("Thanks for your feedback! 🌟")
 
 # Show messages
 for message in st.session_state.messages:
     avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
-    with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
+    bubble_color = "#DCF8C6" if message["role"] == "user" else "#ffffff"
+    alignment = "flex-end" if message["role"] == "user" else "flex-start"
+    border_radius = "20px 20px 0 20px" if message["role"] == "user" else "20px 20px 20px 0"
+
+    st.markdown(f"""
+    <div style="display: flex; justify-content: {alignment}; margin: 10px 0;">
+        <div style="
+            background-color: {bubble_color};
+            color: black;
+            padding: 10px 15px;
+            border-radius: {border_radius};
+            max-width: 70%;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+        ">
+            <strong>{avatar}</strong> {message["content"]}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Generator for streaming
 def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
@@ -98,13 +126,3 @@ if prompt := st.chat_input("Enter your prompt here..."):
 
     except Exception as e:
         st.error(e, icon="🚨")
-
-# Sidebar Feedback
-with st.sidebar:
-    st.markdown("""
-    <h3 style='text-align:center;'>💡 Feedback Corner</h3>
-    <p style='text-align:center;'>We value your thoughts. Help us improve!</p>
-    """, unsafe_allow_html=True)
-    feedback = st.text_area("📝 Leave your feedback here:")
-    if st.button("📩 Submit Feedback"):
-        st.success("Thanks for your feedback! 🌟")

@@ -27,3 +27,10 @@ requests
 # Optional: For Voice Features
 pyttsx3
 speechrecognition
+
+# PDF Export Support
+fpdf
+
+# Live Info Detection APIs
+serpapi
+newsapi-python

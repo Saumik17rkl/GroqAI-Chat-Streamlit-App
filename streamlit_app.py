@@ -3,102 +3,96 @@ from typing import Generator
 from groq import Groq
 
 # Page configuration
-st.set_page_config(page_icon="💬", layout="wide", page_title="AIChat App")
+st.set_page_config(page_icon="💬", layout="wide", page_title="Meta AI Chat")
 
-# Display page icon
-def icon(emoji: str):
-    st.write(f'<span style="font-size: 78px; line-height: 1">{emoji}</span>', unsafe_allow_html=True)
+# WhatsApp-style UI CSS
+st.markdown("""
+    <style>
+        .stChatMessage {
+            border-radius: 18px;
+            padding: 10px 15px;
+            max-width: 70%;
+            margin: 5px;
+            display: inline-block;
+        }
+        .stChatMessage.user {
+            background-color: #dcf8c6;
+            margin-left: auto;
+            text-align: right;
+        }
+        .stChatMessage.assistant {
+            background-color: #f1f0f0;
+            margin-right: auto;
+            text-align: left;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-icon("🏎️")
-st.subheader("AI Chat App", divider="rainbow", anchor=False)
+# Icon & Title
+st.markdown("<h1 style='text-align: center;'>🤖 Meta AI WhatsApp Style</h1>", unsafe_allow_html=True)
 
-# Groq API client (hardcoded API key - replace with your key)
+# Groq API client
 client = Groq(api_key="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")
 
-# Initialize session state
+# Initialize session
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "selected_model" not in st.session_state:
-    st.session_state.selected_model = None
+    st.session_state.selected_model = "llama3-8b-8192"
 
-# Model options (mixtral removed)
 models = {
-    "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
-    "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
-    "llama-3.1-8b-instant": {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
-    "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
     "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
+    "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
 }
 
-# Layout for model selection
-model_option = st.selectbox(
-    "Choose a model:",
-    options=list(models.keys()),
-    format_func=lambda x: models[x]["name"],
-    index=4
-)
+model_option = st.sidebar.selectbox("Choose a model:", options=list(models.keys()), format_func=lambda x: models[x]["name"])
 
-# Reset messages on model change
 if st.session_state.selected_model != model_option:
     st.session_state.messages = []
     st.session_state.selected_model = model_option
 
-# Default max tokens (fixed)
-max_tokens = 4096
+# Display messages in chat bubble style
+for msg in st.session_state.messages:
+    css_class = "user" if msg["role"] == "user" else "assistant"
+    st.markdown(f"<div class='stChatMessage {css_class}'>{msg['content']}</div>", unsafe_allow_html=True)
 
-# Show chat history
-for message in st.session_state.messages:
-    avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
-    with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
+# Streaming function
 
-# Streaming generator
-def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
+def generate_response(chat_completion) -> Generator[str, None, None]:
     for chunk in chat_completion:
         if chunk.choices[0].delta.content:
             yield chunk.choices[0].delta.content
 
-# Chat input
-if prompt := st.chat_input("Enter your prompt here..."):
+# Input
+if prompt := st.chat_input("Type a message..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar='👨‍💻'):
-        st.markdown(prompt)
+    st.markdown(f"<div class='stChatMessage user'>{prompt}</div>", unsafe_allow_html=True)
 
     try:
-        chat_completion = client.chat.completions.create(
+        completion = client.chat.completions.create(
             model=model_option,
             messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
-            max_tokens=max_tokens,
+            max_tokens=4096,
             stream=True
         )
 
-        with st.chat_message("assistant", avatar="🤖"):
-            chat_responses_generator = generate_chat_responses(chat_completion)
-            full_response = st.write_stream(chat_responses_generator)
+        with st.spinner("Meta AI is typing..."):
+            stream = generate_response(completion)
+            full_reply = st.write_stream(stream)
 
-        # Store the response
-        if isinstance(full_response, str):
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        if isinstance(full_reply, str):
+            st.session_state.messages.append({"role": "assistant", "content": full_reply})
         else:
-            combined_response = "\n".join(str(item) for item in full_response)
-            st.session_state.messages.append({"role": "assistant", "content": combined_response})
+            combined = "\n".join(str(i) for i in full_reply)
+            st.session_state.messages.append({"role": "assistant", "content": combined})
 
     except Exception as e:
-        st.error(e, icon="🚨")
+        st.error(f"❌ Error: {e}")
 
-# ---------------- Sidebar Feedback Section ----------------
+# Sidebar feedback
 with st.sidebar:
-    st.markdown("## 🌟 We'd Love Your Feedback!")
-    st.markdown("Help us improve this chat app. How was your experience?")
-    
-    feedback = st.radio(
-        "Rate your experience:",
-        ["👍 Excellent", "🙂 Good", "😐 Okay", "👎 Needs Improvement"],
-        horizontal=True
-    )
-
-    comment = st.text_area("💬 Additional Comments", placeholder="Tell us what we can do better...")
-
-    if st.button("Submit Feedback"):
-        st.success("✅ Thank you for your feedback!")
-        # Save to file or database if needed
+    st.markdown("## 🌟 Feedback")
+    feedback = st.radio("Rate your experience:", ["👍", "🙂", "😐", "👎"], horizontal=True)
+    comment = st.text_area("💬 Additional Comments")
+    if st.button("Send Feedback"):
+        st.success("✅ Feedback submitted! Thank you ✨")

@@ -2,10 +2,10 @@ import streamlit as st
 import requests
 from datetime import datetime
 
-# ✅ Must be first Streamlit command
-st.set_page_config(page_title="🌍AI ChatApp", layout="centered")
+# ✅ Set page config
+st.set_page_config(page_title="🌍 AI ChatApp", layout="centered")
 
-# 🎨 Background Styling
+# 🎨 Custom Styling with transparent black textbox
 background_image_url = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1950&q=80"
 st.markdown(f'''
     <style>
@@ -22,18 +22,28 @@ st.markdown(f'''
         border-radius: 12px;
         padding: 10px;
     }}
-    .stMarkdown, .stTextInput input, .stButton button, .stSelectbox>div>div {{
+    .stTextInput > div > div > input {{
+        background-color: rgba(0, 0, 0, 0.5) !important;
         color: white !important;
-   ''' }}
+    }}
+    .stButton > button {{
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 10px;
+    }}
+    .stSelectbox > div {{
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        color: white !important;
+    }}
     </style>
-, unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
 # ⚠️ Hardcoded API KEYS (For Demo Only)
 GROQ_API_KEY = "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"
 NEWS_API_KEY = "2a85b7ff3378486fb4c8f553b07351f0"
 SERPAPI_KEY = "f70b86191f72adcb577d5868de844c8ad9c9a684db77c939448bcbc1ffaa7bb7"
 
-# Get latest headlines
+# 📰 Get latest headlines
 @st.cache_data(ttl=86400)
 def fetch_news():
     try:
@@ -43,69 +53,71 @@ def fetch_news():
     except:
         return ["⚠️ Unable to fetch latest news."]
 
-# Web Search for query
+# 🌐 Web Search for query
 def web_search(query):
-    params = {
-        "q": query,
-        "api_key": SERPAPI_KEY,
-        "engine": "google",
-    }
-    url = "https://serpapi.com/search"
-    res = requests.get(url, params=params).json()
-    if "answer_box" in res:
-        return res["answer_box"].get("snippet") or res["answer_box"].get("answer")
-    elif "organic_results" in res and res["organic_results"]:
-        return res["organic_results"][0].get("snippet", "")
-    else:
-        return "🌐 No web data found."
+    try:
+        params = {
+            "q": query,
+            "api_key": SERPAPI_KEY,
+            "engine": "google",
+        }
+        url = "https://serpapi.com/search"
+        res = requests.get(url, params=params).json()
+        if "answer_box" in res:
+            return res["answer_box"].get("snippet") or res["answer_box"].get("answer")
+        elif "organic_results" in res and res["organic_results"]:
+            return res["organic_results"][0].get("snippet", "")
+        else:
+            return "🌐 No web data found."
+    except:
+        return "❌ Error during web search."
 
-# Title
+# 🧠 Title
 st.title("🧠 News-Aware Chatbot")
 
-# Sidebar Settings
+# ⚙️ Sidebar Settings
 st.sidebar.title("⚙️ Settings")
 model_option = st.sidebar.selectbox("Choose Model", ["llama3-8b-8192", "gemma2-9b-it"])
 if st.sidebar.button("🧹 Clear Chat"):
     st.session_state.messages = []
 
-# Feedback system
 feedback = st.sidebar.radio("🗣️ How was the response?", ["Bad", "OK", "Good", "Very Good", "Best"], index=2)
 
-# Init session
+# 🗨️ Session init
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Show latest news
+# 📰 Show latest news
 st.markdown("### 📢 Latest Headlines")
 headlines = fetch_news()
 st.markdown("\n".join(headlines))
 
-# Show past messages
+# 🧾 Show past messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Chat Input
+# 🧾 Chat Input
 if prompt := st.chat_input("Ask anything..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Real-time context
+    # Context: latest news + web info
     news_summary = "\n".join(headlines)
     web_snip = web_search(prompt)
 
     context = f"""You are a smart assistant aware of real-time news and internet updates.
-    
-    🗓️ Date: {datetime.today().strftime('%A, %B %d, %Y')}
-    📰 Top News:
-    {news_summary}
-    
-    🌐 Web Info:
-    {web_snip}
-    
-    User asked: {prompt}
-    """
+
+🗓️ Date: {datetime.today().strftime('%A, %B %d, %Y')}
+📰 Top News:
+{news_summary}
+
+🌐 Web Info:
+{web_snip}
+
+User asked: {prompt}
+"""
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -129,4 +141,5 @@ if prompt := st.chat_input("Ask anything..."):
         st.markdown(bot_reply)
     st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
-    st.toast(f"✅ Feedback: {feedback}")
+    # 📢 Toast feedback
+    st.toast(f"✅ Feedback noted: {feedback}")

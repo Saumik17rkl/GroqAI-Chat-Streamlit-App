@@ -98,3 +98,19 @@ if prompt := st.chat_input("Enter your prompt here..."):
 
     except Exception as e:
         st.error(e, icon="🚨")
+    # Sidebar Feedback System
+with st.sidebar:
+    st.markdown("### 💡 We value your feedback!")
+    st.write("How was your experience using the AIChat App?")
+
+    # Emoji Rating
+    rating = st.radio("Rate us:", ["😍 Loved it!", "😐 It’s okay", "😞 Needs improvement"], index=0)
+
+    # Text Input
+    feedback_text = st.text_area("Any suggestions or thoughts?", placeholder="Share your experience...")
+
+    # Submit Button
+    if st.button("📩 Submit Feedback"):
+        # You can add logic to save feedback to a file or database here
+        st.success("🎉 Thank you for your feedback!")
+

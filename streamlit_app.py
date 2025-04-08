@@ -5,7 +5,7 @@ import requests
 GROQ_API_KEY = "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"
 
 # Page Config
-st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="💬 NeuroChat ", page_icon="🤖", layout="centered")
 
 # Background and Chat Styling
 st.markdown("""

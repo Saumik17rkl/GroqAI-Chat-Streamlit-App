@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # 🛡️ API Key (hardcoded for testing; do not use in production)
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 
 # Page Config
 st.set_page_config(page_title="💬 AI Chatbot", page_icon="🤖", layout="centered")

@@ -61,7 +61,7 @@ if "max_tokens" not in st.session_state:
     st.session_state.max_tokens = 512
 
 # Title
-st.markdown("<h1 style='text-align: center; color: white;'>💬 MindEase AI Chatbot</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: white;'>💬NeuroChat  </h1>", unsafe_allow_html=True)
 
 # Display previous messages
 for msg in st.session_state.messages:

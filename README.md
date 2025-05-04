@@ -1,4 +1,4 @@
-# Groq Chat Streamlit App
+# Neurochat Chat Streamlit App
 
 ## Overview
 Groq Chat is a Streamlit-based chatbot application that allows users to interact with various AI models, including Google's Gemma and Meta's LLaMA. The app provides an intuitive interface for real-time chat, model selection, and dynamic token allocation.
